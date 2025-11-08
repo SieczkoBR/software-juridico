@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SJG-IA - Gestão Jurídica</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./style.css">
+
+</head>
+<body class="bg-gray-100">
+
+    <div id="loading-screen" class="flex items-center justify-center h-screen">
+        <h1 class="text-2xl text-blue-600 p-10">Carregando SJG-IA... Conectando...</h1>
+    </div>
+
+    <div id="app-shell" class="flex h-screen hidden">
+        
+        <nav class="w-64 bg-gray-900 text-white flex flex-col shadow-lg flex-shrink-0">
+            <div class="p-5 text-2xl font-bold border-b border-gray-700">
+                SJG-IA
+            </div>
+            
+            <ul class="flex-1 mt-4 space-y-2">
+                <li id="nav-dashboard" class="nav-item active-nav" onclick="showPage('dashboard')">
+                    <a href="#" class="flex items-center space-x-3 p-4 hover:bg-gray-700 rounded-r-lg transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        <span class="ml-3">Dashboard</span>
+                    </a>
+                </li>
+                <li id="nav-processos" class="nav-item" onclick="showPage('processos')">
+                    <a href="#" class="flex items-center space-x-3 p-4 hover:bg-gray-700 rounded-r-lg transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
+                        <span class="ml-3">Processos</span>
+                    </a>
+                </li>
+                <li id="nav-clientes" class="nav-item" onclick="showPage('clientes')">
+                    <a href="#" class="flex items-center space-x-3 p-4 hover:bg-gray-700 rounded-r-lg transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        <span class="ml-3">Clientes</span>
+                    </a>
+                </li>
+                <li id="nav-agenda" class="nav-item" onclick="showPage('agenda')">
+                    <a href="#" class="flex items-center space-x-3 p-4 hover:bg-gray-700 rounded-r-lg transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <span class="ml-3">Agenda</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 overflow-y-auto">
+            
+            <div id="page-dashboard" class="page-content">
+                <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
+                <p class="mt-2 text-gray-600">Bem-vindo, Dr. André. (Aqui virão os gráficos e atalhos)</p>
+            </div>
+
+            <div id="page-processos" class="page-content hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <h1 class="text-3xl font-bold text-gray-800">Meus Processos</h1>
+                    <button id="btn-novo-processo" onclick="toggleModal('modal-processo', true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                        Novo Processo
+                    </button>
+                </div>
+
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nº Processo</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cliente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-processos" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">Nenhum processo cadastrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id="page-clientes" class="page-content hidden">
+                <h1 class="text-3xl font-bold text-gray-800">Meus Clientes</h1>
+                <p class="mt-2 text-gray-600">(Aqui virá a lista de clientes)</p>
+            </div>
+
+            <div id="page-agenda" class="page-content hidden">
+                <h1 class="text-3xl font-bold text-gray-800">Agenda e Prazos</h1>
+                <p class="mt-2 text-gray-600">(Aqui virá o calendário de prazos)</p>
+            </div>
+
+        </main>
+    </div>
+    <div id="modal-processo" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+            <div class="flex justify-between items-center border-b p-4">
+                <h3 id="modal-processo-titulo" class="text-xl font-bold">Novo Processo</h3>
+                <button onclick="toggleModal('modal-processo', false)" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <form id="form-processo" class="p-6 space-y-4">
+                <input type="hidden" id="processo-id">
+                
+                <div>
+                    <label for="processo-numero" class="block text-sm font-medium text-gray-700">Nº do Processo (CNJ)</label>
+                    <input type="text" id="processo-numero" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                
+                <div>
+                    <label for="processo-cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
+                    <input type="text" id="processo-cliente" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                </div>
+                
+                <div>
+                    <label for="processo-status" class="block text-sm font-medium text-gray-700">Status</label>
+                    <select id="processo-status" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="ativo">Ativo</option>
+                        <option value="suspenso">Suspenso</option>
+                        <option value="arquivado">Arquivado</option>
+                        <option value="encerrado">Encerrado</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" onclick="toggleModal('modal-processo', false)" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="notificacao" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg hidden">
+        <span id="notificacao-texto">Ação concluída com sucesso!</span>
+    </div>
+
+
+    <script type="module" src="./app.js"></script>
+</body>
+</html>

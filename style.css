@@ -1,0 +1,22 @@
+/* 1. Importa a fonte 'Inter' do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* 2. Define a fonte 'Inter' como padrão para toda a aplicação */
+html {
+    font-family: 'Inter', sans-serif;
+}
+
+/* 3. Define o estilo do link "ativo" no menu lateral */
+/* O app.js adiciona/remove esta classe quando o senhor clica */
+.nav-item.active-nav {
+    background-color: #1f2937; /* bg-gray-800 */
+    border-left: 4px solid #3b82f6; /* border-l-4 border-blue-500 */
+    font-weight: 600; /* semibold */
+    padding-left: calc(1rem - 4px); /* Ajusta o padding por causa da borda */
+}
+
+/* 4. Classe para esconder/mostrar as páginas */
+/* (O 'app.js' também usa isso) */
+.page-content.hidden {
+    display: none;
+}

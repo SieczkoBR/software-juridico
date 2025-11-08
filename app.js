@@ -3,8 +3,6 @@ import { firebaseConfig } from './firebase-config.js';
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-// --- ALTERADO ---
-// Importamos 'deleteDoc' para Exclusão
 import { 
     getFirestore, 
     setLogLevel,
@@ -16,16 +14,18 @@ import {
     doc,
     getDoc,
     updateDoc,
-    deleteDoc           // <-- NOVO: Para excluir um documento
+    deleteDoc
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-// --- FIM ALTERADO ---
+// --- FIM IMPORTAÇÕES ---
 
 // --- ETAPA 2: Variáveis Globais ---
 window.db = null;
 window.auth = null;
 window.userId = null;
 window.appId = firebaseConfig.appId || 'default-app-id';
+// --- NOVO: Caminhos das Coleções ---
 let processosCollectionPath = '';
+let clientesCollectionPath = ''; // <-- NOVO
 
 // --- ETAPA 3: Inicialização do Firebase ---
 try {
@@ -50,7 +50,9 @@ onAuthStateChanged(window.auth, (user) => {
         window.userId = user.uid;
         console.log("Usuário autenticado:", window.userId);
 
+        // --- NOVO: Define AMBOS os caminhos ---
         processosCollectionPath = `artifacts/${window.appId}/users/${window.userId}/processos`;
+        clientesCollectionPath = `artifacts/${window.appId}/users/${window.userId}/clientes`; // <-- NOVO
         
         document.getElementById('loading-screen').classList.add('hidden');
         document.getElementById('app-shell').classList.remove('hidden');
@@ -83,7 +85,7 @@ window.showPage = (pageId) => {
 }
 
 // --- ETAPA 6: Lógica do Modal ---
-// (Sem alterações)
+// --- ALTERADO: Agora limpa o formulário correto ---
 window.toggleModal = (modalId, show) => {
     const modal = document.getElementById(modalId);
     if (!modal) return; 
@@ -92,23 +94,36 @@ window.toggleModal = (modalId, show) => {
         modal.classList.remove('hidden');
     } else {
         modal.classList.add('hidden');
-        limparFormProcesso();
+        // Limpa o formulário específico que foi fechado
+        if (modalId === 'modal-processo') {
+            limparFormProcesso();
+        } else if (modalId === 'modal-cliente') {
+            limparFormCliente();
+        }
     }
 }
 
+// Helper para Processos (sem alteração)
 window.limparFormProcesso = () => {
     document.getElementById('form-processo').reset(); 
     document.getElementById('processo-id').value = ''; 
     document.getElementById('modal-processo-titulo').innerText = 'Novo Processo';
 }
 
+// --- NOVO: Helper para Clientes ---
+window.limparFormCliente = () => {
+    document.getElementById('form-cliente').reset(); 
+    document.getElementById('cliente-id').value = ''; 
+    document.getElementById('modal-cliente-titulo').innerText = 'Novo Cliente';
+}
+
+
 // --- ETAPA 7: Lógica Principal da Aplicação ---
 function iniciarApp() {
     console.log("Aplicativo iniciado. Anexando 'listeners'...");
 
+    // --- MÓDULO PROCESSOS ---
     const formProcesso = document.getElementById('form-processo');
-
-    // --- Listener de Salvar/Atualizar (Etapa 7) ---
     formProcesso.addEventListener('submit', async (e) => {
         e.preventDefault(); 
         
@@ -124,41 +139,80 @@ function iniciarApp() {
 
         try {
             if (id) {
-                // --- LÓGICA DE ATUALIZAÇÃO (UPDATE) ---
-                console.log("Atualizando documento ID:", id);
+                // UPDATE
                 const docRef = doc(window.db, processosCollectionPath, id);
-                const dataToUpdate = {
+                await updateDoc(docRef, {
                     numeroProcesso: numero,
                     nomeCliente: cliente,
                     status: status,
-                };
-                await updateDoc(docRef, dataToUpdate);
+                });
                 showNotificacao("Processo atualizado com sucesso!", "sucesso");
-
             } else {
-                // --- LÓGICA DE CRIAÇÃO (CREATE) ---
-                console.log("Salvando novo documento...");
-                const dataToSave = {
+                // CREATE
+                await addDoc(collection(window.db, processosCollectionPath), {
                     numeroProcesso: numero,
                     nomeCliente: cliente,
                     status: status,
                     criadoEm: serverTimestamp(),
                     criadoPor: window.userId
-                };
-                await addDoc(collection(window.db, processosCollectionPath), dataToSave);
+                });
                 showNotificacao("Processo salvo com sucesso!", "sucesso");
             }
-            
             toggleModal('modal-processo', false);
-
         } catch (error) {
             console.error("Erro ao salvar processo: ", error);
             showNotificacao("Erro ao salvar: " + error.message, "erro");
         }
     });
 
-    // --- Listener de Leitura (Etapa 9) ---
+    // Carrega os processos
     carregarProcessos();
+
+    // --- NOVO: MÓDULO CLIENTES ---
+    const formCliente = document.getElementById('form-cliente');
+    formCliente.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const nome = document.getElementById('cliente-nome').value;
+        const email = document.getElementById('cliente-email').value;
+        const telefone = document.getElementById('cliente-telefone').value;
+        const cpf = document.getElementById('cliente-cpf').value;
+        const id = document.getElementById('cliente-id').value;
+
+        if (!nome) {
+            showNotificacao("Por favor, preencha o Nome Completo.", "erro");
+            return;
+        }
+
+        try {
+            const data = {
+                nome: nome,
+                email: email,
+                telefone: telefone,
+                cpf: cpf
+            };
+
+            if (id) {
+                // UPDATE
+                const docRef = doc(window.db, clientesCollectionPath, id);
+                await updateDoc(docRef, data);
+                showNotificacao("Cliente atualizado com sucesso!", "sucesso");
+            } else {
+                // CREATE
+                data.criadoEm = serverTimestamp(); // Adiciona data só na criação
+                data.criadoPor = window.userId;
+                await addDoc(collection(window.db, clientesCollectionPath), data);
+                showNotificacao("Cliente salvo com sucesso!", "sucesso");
+            }
+            toggleModal('modal-cliente', false);
+        } catch (error) {
+            console.error("Erro ao salvar cliente: ", error);
+            showNotificacao("Erro ao salvar: " + error.message, "erro");
+        }
+    });
+
+    // Carrega os clientes
+    carregarClientes();
 }
 
 // --- ETAPA 8: Lógica de Notificação ---
@@ -182,137 +236,145 @@ window.showNotificacao = (mensagem, tipo = "sucesso") => {
     }, 3000);
 }
 
+// ------------------------------------
+// --- MÓDULO DE PROCESSOS (Etapa 9-12) ---
+// ------------------------------------
 
-// --- ETAPA 9: Carregar e Ouvir Processos ---
-// (Sem alterações)
+// ETAPA 9: Carregar Processos
 function carregarProcessos() {
     const q = query(collection(window.db, processosCollectionPath));
-    console.log("Ouvindo processos em:", processosCollectionPath);
-
     onSnapshot(q, (querySnapshot) => {
         const processos = []; 
         querySnapshot.forEach((doc) => {
             processos.push({ id: doc.id, ...doc.data() });
         });
-        console.log("Dados recebidos:", processos);
         renderTabelaProcessos(processos);
     }, (error) => {
         console.error("Erro ao carregar processos: ", error);
-        showNotificacao("Erro ao carregar dados: " + error.message, "erro");
     });
 }
 
-// --- ALTERADO: ETAPA 10 - Renderizar Tabela ---
-// (Agora com o botão "Excluir")
+// ETAPA 10: Renderizar Tabela Processos
 function renderTabelaProcessos(processos) {
     const tabelaBody = document.getElementById('tabela-processos');
     tabelaBody.innerHTML = '';
-
     if (processos.length === 0) {
         tabelaBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Nenhum processo cadastrado.</td></tr>`;
         return;
     }
-
     processos.forEach(proc => {
         const data = proc.criadoEm ? proc.criadoEm.toDate().toLocaleDateString('pt-BR') : 'N/A';
-        
-        // Define a cor do status
-        let statusClass = 'bg-gray-100 text-gray-800'; // Padrão
-        if (proc.status === 'ativo') {
-            statusClass = 'bg-green-100 text-green-800';
-        } else if (proc.status === 'suspenso') {
-            statusClass = 'bg-yellow-100 text-yellow-800';
-        } else if (proc.status === 'arquivado' || proc.status === 'encerrado') {
-            statusClass = 'bg-red-100 text-red-800';
-        }
-
-        // --- ALTERAÇÃO AQUI ---
-        // Adicionamos o botão "Excluir"
+        let statusClass = 'bg-gray-100 text-gray-800';
+        if (proc.status === 'ativo') statusClass = 'bg-green-100 text-green-800';
+        else if (proc.status === 'suspenso') statusClass = 'bg-yellow-100 text-yellow-800';
+        else if (proc.status === 'arquivado' || proc.status === 'encerrado') statusClass = 'bg-red-100 text-red-800';
         const linha = `
             <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${proc.numeroProcesso}</div>
-                    <div class="text-xs text-gray-500">Criado em: ${data}</div>
-                </td>
+                <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">${proc.numeroProcesso}</div><div class="text-xs text-gray-500">Criado em: ${data}</div></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${proc.nomeCliente}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
-                        ${proc.status.charAt(0).toUpperCase() + proc.status.slice(1)}
-                    </span>
-                </td>
+                <td class="px-6 py-4 whitespace-nowrap"><span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">${proc.status.charAt(0).toUpperCase() + proc.status.slice(1)}</span></td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <a href="#" onclick="prepararEdicao('${proc.id}')" class="text-indigo-600 hover:text-indigo-900">Editar</a>
+                    <a href="#" onclick="prepararEdicaoProcesso('${proc.id}')" class="text-indigo-600 hover:text-indigo-900">Editar</a>
                     <a href="#" onclick="excluirProcesso('${proc.id}')" class="text-red-600 hover:text-red-900 ml-4">Excluir</a>
                 </td>
-            </tr>
-        `;
-        // --- FIM DA ALTERAÇÃO ---
+            </tr>`;
         tabelaBody.innerHTML += linha;
     });
 }
 
-// --- ETAPA 11: Funções de Edição ---
-// (Sem alterações)
-window.prepararEdicao = async (id) => {
-    console.log("Preparando edição para o ID:", id);
+// ETAPA 11: Preparar Edição Processo
+// --- ALTERADO: Renomeei para 'prepararEdicaoProcesso' para ser específico ---
+window.prepararEdicaoProcesso = async (id) => {
     try {
         const docRef = doc(window.db, processosCollectionPath, id);
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
             const data = docSnap.data();
-            
             document.getElementById('processo-id').value = id;
             document.getElementById('processo-numero').value = data.numeroProcesso;
             document.getElementById('processo-cliente').value = data.nomeCliente;
             document.getElementById('processo-status').value = data.status;
-
             document.getElementById('modal-processo-titulo').innerText = 'Editar Processo';
-            
             toggleModal('modal-processo', true);
-        } else {
-            console.error("Documento não encontrado!");
-            showNotificacao("Erro: Processo não encontrado.", "erro");
-        }
-    } catch (error) {
-        console.error("Erro ao buscar processo para edição:", error);
-        showNotificacao("Erro ao carregar dados: " + error.message, "erro");
-    }
+        } else { showNotificacao("Erro: Processo não encontrado.", "erro"); }
+    } catch (error) { showNotificacao("Erro ao carregar dados: " + error.message, "erro"); }
 }
 
-// --- NOVO: ETAPA 12 - Função de Exclusão ---
-
-// Esta função é chamada pelo botão "Excluir" na tabela
+// ETAPA 12: Excluir Processo
 window.excluirProcesso = async (id) => {
-    console.log("Tentando excluir ID:", id);
-    
-    // --- IMPORTANTE: Confirmação ---
-    // Em um app real, o 'confirm' nativo é ruim porque ele trava o navegador.
-    // O ideal (V2.0) é criar um "modal de confirmação" customizado.
-    // Por enquanto, usaremos o 'confirm' pela simplicidade.
-    // NOTA: O 'confirm' PODE não funcionar no 'live-server' ou em iframes.
-    // Se não funcionar, vamos remover e fazer a exclusão direta para testar.
-    
-    // const querExcluir = confirm("Tem certeza que deseja excluir este processo? Esta ação é irreversível.");
-    // if (!querExcluir) {
-    //    return; // Usuário cancelou
-    // }
-
-    // Vamos pular a confirmação por enquanto, pois 'confirm' é bloqueado em
-    // muitos ambientes de desenvolvimento. Vamos excluir direto.
-
     try {
-        // 1. Cria a referência ao documento
         const docRef = doc(window.db, processosCollectionPath, id);
-        // 2. Exclui o documento
         await deleteDoc(docRef);
-        // 3. Mostra o feedback
         showNotificacao("Processo excluído com sucesso!", "sucesso");
-        // 4. O 'onSnapshot' (Etapa 9) vai ver a mudança e
-        // remover a linha da tabela AUTOMATICAMENTE.
+    } catch (error) { showNotificacao("Erro ao excluir: " + error.message, "erro"); }
+}
 
-    } catch (error) {
-        console.error("Erro ao excluir processo:", error);
-        showNotificacao("Erro ao excluir: " + error.message, "erro");
+
+// ------------------------------------
+// --- NOVO: MÓDULO DE CLIENTES (Etapa 13-16) ---
+// ------------------------------------
+
+// --- NOVO: ETAPA 13 - Carregar Clientes ---
+function carregarClientes() {
+    const q = query(collection(window.db, clientesCollectionPath));
+    onSnapshot(q, (querySnapshot) => {
+        const clientes = [];
+        querySnapshot.forEach((doc) => {
+            clientes.push({ id: doc.id, ...doc.data() });
+        });
+        renderTabelaClientes(clientes);
+    }, (error) => {
+        console.error("Erro ao carregar clientes: ", error);
+    });
+}
+
+// --- NOVO: ETAPA 14 - Renderizar Tabela Clientes ---
+function renderTabelaClientes(clientes) {
+    const tabelaBody = document.getElementById('tabela-clientes');
+    tabelaBody.innerHTML = '';
+    if (clientes.length === 0) {
+        tabelaBody.innerHTML = `<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Nenhum cliente cadastrado.</td></tr>`;
+        return;
     }
+    clientes.forEach(cli => {
+        const linha = `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">${cli.nome}</div><div class="text-xs text-gray-500">${cli.cpf || 'CPF/CNPJ não informado'}</div></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${cli.email || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${cli.telefone || 'N/A'}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <a href="#" onclick="prepararEdicaoCliente('${cli.id}')" class="text-indigo-600 hover:text-indigo-900">Editar</a>
+                    <a href="#" onclick="excluirCliente('${cli.id}')" class="text-red-600 hover:text-red-900 ml-4">Excluir</a>
+                </td>
+            </tr>`;
+        tabelaBody.innerHTML += linha;
+    });
+}
+
+// --- NOVO: ETAPA 15 - Preparar Edição Cliente ---
+window.prepararEdicaoCliente = async (id) => {
+    try {
+        const docRef = doc(window.db, clientesCollectionPath, id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('cliente-id').value = id;
+            document.getElementById('cliente-nome').value = data.nome;
+            document.getElementById('cliente-email').value = data.email || '';
+            document.getElementById('cliente-telefone').value = data.telefone || '';
+            document.getElementById('cliente-cpf').value = data.cpf || '';
+            document.getElementById('modal-cliente-titulo').innerText = 'Editar Cliente';
+            toggleModal('modal-cliente', true);
+        } else { showNotificacao("Erro: Cliente não encontrado.", "erro"); }
+    } catch (error) { showNotificacao("Erro ao carregar dados: " + error.message, "erro"); }
+}
+
+// --- NOVO: ETAPA 16 - Excluir Cliente ---
+window.excluirCliente = async (id) => {
+    // (Poderíamos adicionar um 'confirm' aqui)
+    try {
+        const docRef = doc(window.db, clientesCollectionPath, id);
+        await deleteDoc(docRef);
+        showNotificacao("Cliente excluído com sucesso!", "sucesso");
+    } catch (error) { showNotificacao("Erro ao excluir: " + error.message, "erro"); }
 }

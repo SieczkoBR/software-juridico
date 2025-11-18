@@ -3,29 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SJG-IA - Gestão Jurídica</title>
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./style.css">
+    <title>SJG-IA - Gestão Jurídica (Supabase)</title>
 
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- === ALTERAÇÃO: CARREGANDO O DRIVER DO SUPABASE === -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body class="bg-gray-100">
 
     <!-- TELA DE CARREGAMENTO -->
+    <!-- ALTERADO: Mensagem de Conexão -->
     <div id="loading-screen" class="flex items-center justify-center h-screen">
-        <h1 class="text-2xl text-blue-600 p-10">Carregando SJG-IA... Conectando...</h1>
+        <h1 class="text-2xl text-blue-600 p-10">Carregando SJG-IA... Conectando ao Supabase...</h1>
     </div>
 
     <!-- O "SHELL" PRINCIPAL DA APLICAÇÃO -->
+    <!-- (Todo o resto do HTML (modais, tabelas, etc.) permanece o mesmo) -->
     <div id="app-shell" class="flex h-screen hidden">
-        
+
         <!-- ==== MENU LATERAL (Sidebar) ==== -->
         <nav class="w-64 bg-gray-900 text-white flex flex-col shadow-lg flex-shrink-0">
-            <!-- (Menu lateral permanece o mesmo) -->
             <div class="p-5 text-2xl font-bold border-b border-gray-700">
                 SJG-IA
             </div>
-            
             <ul class="flex-1 mt-4 space-y-2">
                 <li id="nav-dashboard" class="nav-item active-nav" onclick="showPage('dashboard')">
                     <a href="#" class="flex items-center space-x-3 p-4 hover:bg-gray-700 rounded-r-lg transition-all">
@@ -56,16 +59,13 @@
 
         <!-- ==== ÁREA DE CONTEÚDO PRINCIPAL ==== -->
         <main class="flex-1 p-6 overflow-y-auto">
-            
-            <!-- Página: Dashboard -->
+
             <div id="page-dashboard" class="page-content">
                 <h1 class="text-3xl font-bold text-gray-800">Dashboard</h1>
-                <p class="mt-2 text-gray-600">Bem-vindo, Dr. André. (Aqui virão os gráficos e atalhos)</p>
+                <p class="mt-2 text-gray-600">Bem-vindo, Dr. André. (Conectado ao Supabase)</p>
             </div>
 
-            <!-- Página: Processos -->
             <div id="page-processos" class="page-content hidden">
-                <!-- Cabeçalho e Botão -->
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-bold text-gray-800">Meus Processos</h1>
                     <button onclick="toggleModal('modal-processo', true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
@@ -73,7 +73,6 @@
                         Novo Processo
                     </button>
                 </div>
-                <!-- Tabela de Processos -->
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -91,10 +90,7 @@
                 </div>
             </div>
 
-            <!-- Página: Clientes -->
-            <!-- === ALTERAÇÃO INICIA AQUI === -->
             <div id="page-clientes" class="page-content hidden">
-                <!-- Cabeçalho e Botão -->
                 <div class="flex justify-between items-center mb-6">
                     <h1 class="text-3xl font-bold text-gray-800">Meus Clientes</h1>
                     <button onclick="toggleModal('modal-cliente', true)" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
@@ -102,7 +98,6 @@
                         Novo Cliente
                     </button>
                 </div>
-                <!-- Tabela de Clientes -->
                 <div class="bg-white shadow-md rounded-lg overflow-hidden">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
@@ -119,9 +114,7 @@
                     </table>
                 </div>
             </div>
-            <!-- === ALTERAÇÃO TERMINA AQUI === -->
 
-            <!-- Página: Agenda -->
             <div id="page-agenda" class="page-content hidden">
                 <h1 class="text-3xl font-bold text-gray-800">Agenda e Prazos</h1>
                 <p class="mt-2 text-gray-600">(Aqui virá o calendário de prazos)</p>
@@ -131,8 +124,9 @@
     </div>
     <!-- FIM DO APP-SHELL -->
 
-    
+
     <!-- ==== MODAL DE NOVO PROCESSO (ESCONDIDO) ==== -->
+    <!-- ALTERAÇÃO: 'processo-cliente' agora é um <select> -->
     <div id="modal-processo" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
             <div class="flex justify-between items-center border-b p-4">
@@ -147,10 +141,16 @@
                     <label for="processo-numero" class="block text-sm font-medium text-gray-700">Nº do Processo (CNJ)</label>
                     <input type="text" id="processo-numero" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
+
+                <!-- MUDANÇA ESTRUTURAL (Chave Estrangeira) -->
                 <div>
                     <label for="processo-cliente" class="block text-sm font-medium text-gray-700">Cliente</label>
-                    <input type="text" id="processo-cliente" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                    <select id="processo-cliente" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
+                        <!-- O app.js vai popular esta lista com os clientes -->
+                        <option value="">Carregando clientes...</option>
+                    </select>
                 </div>
+
                 <div>
                     <label for="processo-status" class="block text-sm font-medium text-gray-700">Status</label>
                     <select id="processo-status" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
@@ -173,26 +173,22 @@
     </div>
     <!-- FIM DO MODAL DE PROCESSO -->
 
-    <!-- ==== NOVO: MODAL DE NOVO CLIENTE (ESCONDIDO) ==== -->
+    <!-- ==== MODAL DE NOVO CLIENTE (ESCONDIDO) ==== -->
+    <!-- (Sem alterações, apenas o form-id mudou) -->
     <div id="modal-cliente" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
-            <!-- Cabeçalho do Modal -->
             <div class="flex justify-between items-center border-b p-4">
                 <h3 id="modal-cliente-titulo" class="text-xl font-bold">Novo Cliente</h3>
                 <button onclick="toggleModal('modal-cliente', false)" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
-            
-            <!-- Formulário -->
             <form id="form-cliente" class="p-6 space-y-4">
                 <input type="hidden" id="cliente-id">
-                
                 <div>
                     <label for="cliente-nome" class="block text-sm font-medium text-gray-700">Nome Completo</label>
                     <input type="text" id="cliente-nome" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500" required>
                 </div>
-                
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="cliente-email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -207,8 +203,6 @@
                     <label for="cliente-cpf" class="block text-sm font-medium text-gray-700">CPF/CNPJ</label>
                     <input type="text" id="cliente-cpf" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
                 </div>
-                
-                <!-- Botões do Rodapé -->
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" onclick="toggleModal('modal-cliente', false)" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">
                         Cancelar
@@ -222,14 +216,12 @@
     </div>
     <!-- FIM DO MODAL DE CLIENTE -->
 
-
     <!-- ==== NOTIFICAÇÃO (Toast) ==== -->
     <div id="notificacao" class="fixed bottom-5 right-5 bg-green-500 text-white py-2 px-4 rounded-lg shadow-lg hidden z-50">
         <span id="notificacao-texto">Ação concluída com sucesso!</span>
     </div>
 
-
-    <!-- 3. Carrega nosso "Cérebro" JavaScript -->
+    <!-- === ALTERAÇÃO: Carrega o app.js === -->
     <script type="module" src="./app.js"></script>
 </body>
 </html>

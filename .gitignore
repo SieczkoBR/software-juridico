@@ -1,4 +1,4 @@
 # Estamos dizendo ao Git: "Não salve o histórico deste arquivo de chaves". Se um dia o senhor decidir colocar seu projeto no GitHub (um repositório de código online), este passo impede que o senhor exponha acidentalmente a senha do seu banco de dados para o mundo.
 
-firebase-config.js 
+supabase-config.js
 backend/serviceAccountKey.json
